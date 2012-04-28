@@ -181,7 +181,7 @@ def parseTwitter(twitter_id,since_id="",):
             if text[0] != '@' : #only not sync @, sync RT
                 print "<li>",id,text,"</li><br />\n"
                 logging.debug("msg id=%s msg:%s ", id, text )
-                #ret = send_sina_msgs(my_weibo_username,my_weibo_password,text)
+                send_sina_msgs(my_weibo_username,my_weibo_password,text)
                 msg=Twitter()
                 msg.id=id
                 msg.put()
