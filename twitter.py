@@ -166,13 +166,13 @@ def parseTwitter(twitter_id,since_id="",):
     else:
         url="http://twitter.com/statuses/user_timeline/%s.xml"%(twitter_id)
     #print url
-    logging.debug("start logging, %s ", url)
+    #logging.debug("start logging, %s ", url)
     result = urlfetch.fetch(url)
     #print result.content
     if result.status_code == 200:
         content = result.content
         m = re.findall(r"(?i)<id>([^<]+)</id>\s*<text>(?!@)([^<]+)</text>", content)
-        logging.debug("xml content ", content)
+        #logging.debug("xml content ", content)
         print "<html><body><ol>"
         for x in reversed(m):
             id=x[0]
