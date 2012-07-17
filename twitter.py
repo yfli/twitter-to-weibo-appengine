@@ -12,59 +12,53 @@ import base64
 import logging
 import re
 import htmlentitydefs
-import time
-import urllib,urllib2,Cookie
+import urllib,Cookie
+try:
+    import json
+except ImportError:
+    import simplejson as json
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
+from poster.encode import multipart_encode, MultipartParam
 
-my_twitter_id="you"
-my_weibo_username="yourid@sina.com"
-my_weibo_password="yourpassword"
-my_weibo_apikey=1234567890 
-my_tinycc_login="yourlogin"
-my_tinycc_api_key="yourapikey"
+from testid import my_twitter_id, my_weibo_username, my_weibo_password
+from testid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
 
 class Twitter(db.Model):
-    id=db.StringProperty()
+    twid = db.StringProperty()
     created = db.DateTimeProperty(auto_now_add=True)
 
-def make_cookie_header(cookie):
-    ret = ""
-    for val in cookie.values():
-        ret+="%s=%s; "%(val.key, val.value)
-    return ret
-
 def unescape(text):
-   """Removes HTML or XML character references 
-      and entities from a text string.
-   from Fredrik Lundh
-   http://effbot.org/zone/re-sub.htm#unescape-html
-   """
-   def fixup(m):
-       text = m.group(0)
-       if text[:2] == "&#":
-           # character reference
-           try:
-               if text[:3] == "&#x":
-                   return unichr(int(text[3:-1], 16))
-               else:
-                   return unichr(int(text[2:-1]))
-           except ValueError:
-               pass
-       else:
-           # named entity
-           try:
-               text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
-           except KeyError:
-               pass
-       return text # leave as is
-   return re.sub("&#?\w+;", fixup, text)
+    """Removes HTML or XML character references 
+       and entities from a text string.
+    from Fredrik Lundh
+    http://effbot.org/zone/re-sub.htm#unescape-html
+    """
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text # leave as is
+    return re.sub("&#?\w+;", fixup, text)
 
 def getLatest():
     msg=db.GqlQuery("SELECT * FROM Twitter ORDER BY created DESC")
     x=msg.count()
     if x:
-        return msg[0].id
+        return msg[0].twid
     else:
         return ""
 
@@ -77,46 +71,6 @@ def deleteData(since_id):
     else:
         return False
 
-def send_sina_msgs(username,password,msg):
-    auth=base64.b64encode(username+":"+password)
-    auth='Basic '+auth
-    msg=unescape(msg)
-    logging.debug("Send to Sina: %s", msg)
-    form_fields = {
-            "status": msg,
-            }
-    form_data = urllib.urlencode(form_fields)
-    result = urlfetch.fetch(url="http://api.t.sina.com.cn/statuses/update.xml?source=%s"%my_weibo_apikey,
-            payload=form_data,
-            method=urlfetch.POST,
-            headers={'Authorization':auth}
-            )
-    if result.status_code == 200:
-        bk=result.content
-        if bk.find("true"):
-            return True
-    else:
-        return False
-
-def send_sina_web_msgs(username,password,msg):
-        # send sina msgs. use sina username, password.
-        # the msgs parameter is a message list, not a single string.       
-        result = urlfetch.fetch(url="https://login.sina.com.cn/sso/login.php?username=%s&password=%s&returntype=TEXT"%(username,password))
-        cookie = Cookie.SimpleCookie(result.headers.get('set-cookie', ''))
-        msg=unescape(msg)
-        form_fields = {
-          "content": msg,          
-        }
-        form_data = urllib.urlencode(form_fields)
-
-        result = urlfetch.fetch(url="http://t.sina.com.cn/mblog/publish.php",
-                            payload=form_data,
-                            method=urlfetch.POST,
-                            headers={'Referer':'http://t.sina.com.cn','Cookie' : make_cookie_header(cookie)})
-        #print ""
-        #print result.content
-        
-
 def untco(url):
     try:
         response = urlfetch.fetch(url,
@@ -126,10 +80,21 @@ def untco(url):
         traceback.print_exc(file=sys.stdout)
         return url
 
+    if not response.final_url.startswith("http://"):
+        try:
+            logging.debug("Fall back to TCO only unshort %s", url)
+            response = urlfetch.fetch(url,
+                    method=urlfetch.HEAD, follow_redirects=False)
+            return response.headers['location']
+        except:
+            logging.debug("Error unshort %s", url)
+            traceback.print_exc(file=sys.stdout)
+            return url
+
     return response.final_url
 
 def short_tinycc(longurl):
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),my_tinycc_login,my_tinycc_api_key)
+    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),my_tinycc_login,my_tinycc_apikey)
     result = urlfetch.fetch(url)
     if result.status_code == 200 :
         content = result.content
@@ -138,26 +103,144 @@ def short_tinycc(longurl):
         if errCode != None:
             short = re.findall(r"<shorturl>([^<]+)</shorturl>",content)
             return short[0]
+        else:
+            logging.debug("tinycc Error: %s ", errCode)
+
     logging.debug("Error shorten %s in tinycc", longurl)
     return None
 
+def get_img_file_url(img_site_url):
+    if not (img_site_url.startswith("http://flic.kr") or 
+            img_site_url.startswith("http://www.flickr.com/photos") or 
+            img_site_url.startswith("http://instagr.am") or 
+            img_site_url.startswith("http://yfrog.com") or 
+            img_site_url.startswith("http://picplz.com") or
+            img_site_url.startswith("http://twitter.com") or 
+            img_site_url.startswith("http://twitpic.com") or 
+            img_site_url.startswith("http://img.ly") 
+            ) :
+        logging.debug("Not a supported img site:%s", img_site_url)
+        return None
 
+    try:
+        response = urlfetch.fetch(img_site_url)
+        if response.status_code == 200 :
+            if (img_site_url.startswith("http://flic.kr") or 
+                    img_site_url.startswith("http://www.flickr.com/photos") or 
+                    img_site_url.startswith("http://instagr.am") or 
+                    img_site_url.startswith("http://yfrog.com") or 
+                    img_site_url.startswith("http://picplz.com")) :
+                #picplz #flickr #instgram #yfrog, standard og:image
+                m = re.search(r"og:image\" content=\"([^<]+)\"", response.content)
+                if m:
+                    return m.group(1)
+                else:
+                    logging.debug("Do not find image file url for %s", img_site_url)
+                    return None
+            elif img_site_url.startswith("http://twitter.com") :
+                #twitter.com, no og:image 
+                m = re.search(r"img src=\"https://p.twimg.com/([^<]+)\"", response.content)
+                if m:
+                    return "http://p.twimg.com/"+m.group(1)+":large"
+                else:
+                    logging.debug("Do not find image file url for %s", img_site_url)
+                    return None
+            elif img_site_url.startswith("http://twitpic.com") :
+                #twitpic small thumbnail
+                #Not working
+                #seems twitpic/cloudfront.net is blocking gae requests for file, 
+                return "http://twitpic.com/show/large/" + img_site_url[19:]
 
-def replacetco(msg):
+            elif img_site_url.startswith("http://img.ly") :
+                #imgly, og:image at last
+                m = re.search(r"content=\"([^<]+)\" property=\"og:image\"", response.content)
+                if m:
+                    return m.group(1).replace("thumb", "large")
+                else:
+                    logging.debug("Do not find image file url for %s", img_site_url)
+                    return None
+
+    except:
+        logging.debug("Error fetch image url %s", img_site_url)
+        traceback.print_exc(file=sys.stdout)
+        return None
+
+def replace_tco(msg):
     t = re.findall(r"(http://t\.co/\S{8})", msg)
+    img_file_url = None
     for orig in t:
         expanded = untco(orig)
         logging.debug("expanded: %s", expanded)
-        #print "expa: ", expanded
+        if img_file_url == None:
+            img_file_url = get_img_file_url(expanded)
         reshortened = short_tinycc(expanded)
         logging.debug("reshort: %s", reshortened)
         if reshortened != None:
             msg = msg.replace( orig, reshortened)
         else:
-            if expanded[:11] == "http://t.co":
+            if expanded.startswith("http://t.co"):
                 expanded = "ForbidenURL"
-            msg = msg.replace( orig, expanded)
-    return msg
+            msg = msg.replace(orig, expanded)
+    return msg, img_file_url
+
+
+def get_image_data(url):
+    try:
+        response = urlfetch.fetch(url,
+                method=urlfetch.GET)
+    except:
+        logging.debug("Error get image %s", url)
+        traceback.print_exc(file=sys.stdout)
+        return None
+
+    if response.status_code == 200:
+        return response.content
+    else:
+        return None
+
+def send_sina_msg_withpic(username,password,msg, pic=None):
+
+    logging.debug("Send to Sina: %s", msg)
+
+    header = {}
+
+    payload_data = {}
+    payload_data['source'] = my_weibo_apikey
+    payload_data['status'] = msg
+
+    pic_data = None
+    if pic != None:
+        pic_data = get_image_data(pic) 
+    if pic_data != None:
+        payload_data['pic'] = MultipartParam('pic', filename='abc.jpg',
+                filetype='image/jpeg',
+                value = pic_data)
+        update_url="http://api.t.sina.com.cn/statuses/upload.xml"
+        to_post, header = multipart_encode(payload_data)
+    else:
+        update_url="http://api.t.sina.com.cn/statuses/update.xml"
+        to_post = urllib.urlencode(payload_data)
+
+    auth=base64.b64encode(username+":"+password)
+    auth='Basic '+auth
+    header['Authorization']=auth
+
+    try:
+        result = urlfetch.fetch(url=update_url,
+                payload="".join(to_post),
+                method=urlfetch.POST,
+                headers=header)
+        print result.status_code
+        print result.content
+
+        if result.status_code == 200:
+            return True
+        else:
+            return False
+    except:
+        logging.debug("Error update the message to sina" )
+        traceback.print_exc(file=sys.stdout)
+        return False
 
 #get one page of to user's replies, 20 messages at most. 
 def parseTwitter(twitter_id,since_id="",):
@@ -175,15 +258,18 @@ def parseTwitter(twitter_id,since_id="",):
         #logging.debug("xml content ", content)
         print "<html><body><ol>"
         for x in reversed(m):
-            id=x[0]
-            text=replacetco(x[1])
-            #print "message: ",text
-            if text[0] != '@' : #only not sync @, sync RT
-                print "<li>",id,text,"</li><br />\n"
-                logging.debug("msg id=%s msg:%s ", id, text )
-                send_sina_msgs(my_weibo_username,my_weibo_password,text)
-                msg=Twitter()
-                msg.id=id
+            twid=x[0]
+            text = unescape(x[1])
+            text, img_url = replace_tco(text)
+
+            if text[0] != '@' : #do not sync iff @, sync RT@
+                print "<li>",twid,text,"</li><br />\n"
+                logging.debug("msg id=%s ", twid )
+                send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
+
+                # always log the twitter message. Non-sense to retry if it is only gfw-ed by sina 
+                msg = Twitter()
+                msg.twid = twid
                 msg.put()
         print "</ol></body></html>"
     else:
@@ -193,6 +279,6 @@ def parseTwitter(twitter_id,since_id="",):
     print ""
 
 latest=getLatest() 
-# deleteData(since_id=latest)
+deleteData(since_id=latest)
 parseTwitter(twitter_id=my_twitter_id,since_id=latest)
 #parseTwitter(twitter_id=my_twitter_id)
