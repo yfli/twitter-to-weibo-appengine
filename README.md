@@ -9,7 +9,7 @@
 安装需要以下几步。
 
 * 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面[http://tiny.cc/api-docs](http://tiny.cc/api-docs)取得你的API Key
-* 在新浪微博开放平台http://open.weibo.com/申请成为开发者。注意，要用你想要同步的微博帐号申请。
+* 在[新浪微博开放平台](http://open.weibo.com/)申请成为开发者。注意，要用你想要同步的微博帐号申请。
 * 创建一个应用。类型可以选为网页应用。在该应用的控制台页面取得应用的App Key。
 * 编辑myid.py文件，把用户名密码和申请到的App keys填入。注意，除了weibo apikey直接填数字，其他都是string类型，直接填写在双引号中。
 
@@ -35,7 +35,7 @@
 示例
 ---
 
-这是我建的一个Lady Gaga的同步。Lady Gaga [twitter](), Lady Gaga [微博](http://weibo.com/u/2841791740)
+这是我建的一个Lady Gaga的同步。Lady Gaga [twitter](https://twitter.com/ladygaga), Lady Gaga [微博](http://weibo.com/u/2841791740)
 
 License
 -------
