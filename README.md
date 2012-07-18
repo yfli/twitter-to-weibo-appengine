@@ -49,5 +49,10 @@ License
 * http://code.google.com/p/twitter-feed/
 * http://atlee.ca/software/poster/
 
+联系
+----
+
+* [yfli](https://twitter.com/yfli)@twitter
+* [warehou](http://www.weibo.com/u/1410749162)@微博
 
 [gplv3]: http://www.gnu.org/licenses/gpl.html
