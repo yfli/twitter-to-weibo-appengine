@@ -8,18 +8,19 @@
 
 安装需要以下几步。
 
-* 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面[http://tiny.cc/api-docs](http://tiny.cc/api-docs)取得你的API Key
+* 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面 [http://tiny.cc/api-docs] 取得你的API Key
 * 在[新浪微博开放平台](http://open.weibo.com/)申请成为开发者。注意，要用你想要同步的微博帐号申请。
 * 创建一个应用。类型可以选为网页应用。在该应用的控制台页面取得应用的App Key。
 * 编辑myid.py文件，把用户名密码和申请到的App keys填入。注意，除了weibo apikey直接填数字，其他都是string类型，直接填写在双引号中。
 
+```console
      my_twitter_id=""
      my_weibo_username=""
      my_weibo_password=""
      my_weibo_apikey=1234567890
      my_tinycc_login=""
      my_tinycc_apikey=""
-
+```
 
 部署
 ---
@@ -39,9 +40,12 @@
 
 License
 -------
-GPLv3 [gplv3]
-参考:http://code.google.com/p/twitter-feed/
-     http://atlee.ca/software/poster/
+[GPLv3][gplv3]
+
+参考
+----
+* http://code.google.com/p/twitter-feed/
+* http://atlee.ca/software/poster/
 
 
-[gplv3] [http://www.gnu.org/licenses/gpl.html]
+[gplv3]: http://www.gnu.org/licenses/gpl.html
