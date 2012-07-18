@@ -44,6 +44,8 @@ License
 
 参考
 ----
+本项目参考/使用了以下项目
+
 * http://code.google.com/p/twitter-feed/
 * http://atlee.ca/software/poster/
 
