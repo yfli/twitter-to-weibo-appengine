@@ -6,6 +6,8 @@
 安装
 ---
 
+首先下载本项目代码。使用git或直接下载[zip包](https://github.com/yfli/twitter-to-weibo-appengine/zipball/master)
+
 安装需要以下几步。
 
 * 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面 http://tiny.cc/api-docs 取得你的API Key
