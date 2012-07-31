@@ -1,7 +1,7 @@
 同步twitter到新浪微博
 ====================
 
-部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽，自动同步twtter消息中flickr、Instagram、twitter等网站的图片。
+部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽，自动同步twitter消息中flickr、Instagram、twitter等网站的图片。
 
 安装
 ---
