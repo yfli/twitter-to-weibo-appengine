@@ -1,11 +1,10 @@
 同步twitter到新浪微博
 ====================
 
-部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽
+部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽。
 
-当前使用Sina微博的gtalk bot同步。因Sina全面关闭的Basic Auth的登录，而它的oauth2分级政策使小应用根本不可能
-
-自动同步twitter消息中flickr、Instagram、twitter等网站的图片。
+当前使用Sina微博的gtalk bot同步，只能同步消息，无法同步图片。因Sina的oauth2分级政策
+意味着小应用根本无法使用它的oauth2，所以图片同步功能从ver 0.29开始暂时移除。
 
 安装
 ---
@@ -17,7 +16,8 @@
 * 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面 http://tiny.cc/api-docs 取得你的API Key
 * 在[新浪微博开放平台](http://open.weibo.com/)申请成为开发者。注意，要用你想要同步的微博帐号申请。
 * 创建一个应用。类型可以选为网页应用。在该应用的控制台页面取得应用的App Key。
-* 编辑myid.py文件，把用户名密码和申请到的App keys填入。注意，除了weibo apikey直接填数字，其他都是string类型，直接填写在双引号中。
+* 编辑myid.py文件，把用户名密码和申请到的App keys填入。注意，除了weibo apikey直接填数字，
+其他都是string类型，直接填写在双引号中。
 
 ```console
      my_twitter_id=""
@@ -42,7 +42,8 @@
 示例
 ---
 
-这是我建的一个Lady Gaga的同步。Lady Gaga [twitter](https://twitter.com/ladygaga), Lady Gaga [微博](http://weibo.com/u/2841791740)
+这是我建的一个Lady Gaga的同步。Lady Gaga [twitter](https://twitter.com/ladygaga), 
+Lady Gaga [微博](http://weibo.com/u/2841791740)
 
 License
 -------
