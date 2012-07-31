@@ -11,18 +11,25 @@ import traceback
 import base64
 import logging
 import re
+import time
 import htmlentitydefs
 import urllib,Cookie
 try:
     import json
 except ImportError:
     import simplejson as json
+
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
+from google.appengine.api import xmpp
 from poster.encode import multipart_encode, MultipartParam
+
+import tweepy
+from tweepy.error import TweepError
 
 from testid import my_twitter_id, my_weibo_username, my_weibo_password
 from testid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
+from testid import my_weibo_bot
 
 class Twitter(db.Model):
     twid = db.StringProperty()
@@ -198,6 +205,12 @@ def get_image_data(url):
     else:
         return None
 
+
+def send_sina_msg_gtalkbot(msg, pic=None):
+    xmpp.send_presence(my_weibo_bot)
+    time.sleep(0.1)
+    xmpp.send_message(my_weibo_bot, msg)
+
 def send_sina_msg_withpic(username,password,msg, pic=None):
 
     logging.debug("Send to Sina: %s", msg)
@@ -236,6 +249,7 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
         if result.status_code == 200:
             return True
         else:
+            logging.error("Error update the message to sina, errorcode %s", result.status_code )
             return False
     except:
         logging.debug("Error update the message to sina" )
@@ -243,42 +257,39 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
         return False
 
 #get one page of to user's replies, 20 messages at most. 
-def parseTwitter(twitter_id,since_id="",):
-    if since_id:
-        url="http://twitter.com/statuses/user_timeline/%s.xml?since_id=%s"%(twitter_id,since_id)
-    else:
-        url="http://twitter.com/statuses/user_timeline/%s.xml"%(twitter_id)
-    #print url
-    #logging.debug("start logging, %s ", url)
-    result = urlfetch.fetch(url)
-    #print result.content
-    if result.status_code == 200:
-        content = result.content
-        m = re.findall(r"(?i)<id>([^<]+)</id>\s*<text>(?!@)([^<]+)</text>", content)
-        #logging.debug("xml content ", content)
-        print "<html><body><ol>"
-        for x in reversed(m):
-            twid=x[0]
-            text = unescape(x[1])
-            text, img_url = replace_tco(text)
+def parseTwitter(twitter_id,since="",):
+    twitter = tweepy.API()
+    try:
+        if since:
+            user_timeline = twitter.user_timeline(screen_name=twitter_id, since_id=since)
+        else:
+            user_timeline = twitter.user_timeline(screen_name=twitter_id)
+    except TweepError, e:
+        if (e.response != None and e.response.status != 400):
+            logging.error("Error to get twitter user_timeline, E: %s",e.reason)
+        return;
 
-            if text[0] != '@' : #do not sync iff @, sync RT@
-                print "<li>",twid,text,"</li><br />\n"
-                logging.debug("msg id=%s ", twid )
-                send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
+    print "<html><body><ol>"
+    for tweet in reversed(user_timeline):
+        twid=tweet.id_str
+        text = unescape(tweet.text)
+        text, img_url = replace_tco(text)
 
-                # always log the twitter message. Non-sense to retry if it is only gfw-ed by sina 
-                msg = Twitter()
-                msg.twid = twid
-                msg.put()
-        print "</ol></body></html>"
-    else:
-        print "get twitter data error. "
-        print result.content
+        if text[0] != '@' : #do not sync iff @, sync RT@
+            print "<li>",twid,text,"</li><br />\n"
+            logging.debug("msg id=%s,msg:%s "%(twid, text))
+            #send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
+            send_sina_msg_gtalkbot(text)
+
+            # always log the twitter message. Non-sense to retry if it is only gfw-ed by sina 
+            msg = Twitter()
+            msg.twid = twid
+            msg.put()
+    print "</ol></body></html>"
 
     print ""
 
 latest=getLatest() 
 deleteData(since_id=latest)
-parseTwitter(twitter_id=my_twitter_id,since_id=latest)
+parseTwitter(twitter_id=my_twitter_id,since=latest)
 #parseTwitter(twitter_id=my_twitter_id)
