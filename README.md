@@ -1,7 +1,11 @@
 同步twitter到新浪微博
 ====================
 
-部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽，自动同步twitter消息中flickr、Instagram、twitter等网站的图片。
+部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽
+
+当前使用Sina微博的gtalk bot同步。因Sina全面关闭的Basic Auth的登录，而它的oauth2分级政策使小应用根本不可能
+
+自动同步twitter消息中flickr、Instagram、twitter等网站的图片。
 
 安装
 ---
@@ -56,5 +60,20 @@ License
 
 * [yfli](https://twitter.com/yfli)@twitter
 * [warehou](http://www.weibo.com/u/1410749162)@微博
+
+Changelog
+---------
+
+- ver 0.29 2012/7/31
+
+     Enmergency update. Sina blocked Basic Auth since 7/24. Use gtalk robot instead.
+
+- ver 0.2 2012/7/17
+
+    Support image sync
+
+- ver 0.1 2012/4/27
+
+    First implement.
 
 [gplv3]: http://www.gnu.org/licenses/gpl.html
