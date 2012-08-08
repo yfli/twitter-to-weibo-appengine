@@ -3,8 +3,9 @@
 
 部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽。
 
-当前使用Sina微博的gtalk bot同步，只能同步消息，无法同步图片。因Sina的oauth2分级政策
-意味着小应用根本无法使用它的oauth2，所以图片同步功能从ver 0.29开始暂时移除。
+从0.29版本开始使用Sina微博的gtalk bot同步，只能同步消息，无法同步图片。因Sina的oauth2分级政策
+意味着小应用根本无法使用oauth2。事实上大应用基本都是用它的Xauth方法。
+
 
 安装
 ---
@@ -14,19 +15,21 @@
 安装需要以下几步。
 
 * 申请一个[tiny.cc](http://tiny.cc)的帐号。从api页面 http://tiny.cc/api-docs 取得你的API Key
-* 在[新浪微博开放平台](http://open.weibo.com/)申请成为开发者。注意，要用你想要同步的微博帐号申请。
-* 创建一个应用。类型可以选为网页应用。在该应用的控制台页面取得应用的App Key。
-* 编辑myid.py文件，把用户名密码和申请到的App keys填入。注意，除了weibo apikey直接填数字，
-其他都是string类型，直接填写在双引号中。
+* 到微博聊天机器人绑定页面http://app.weibo.com/tool/imbot ，绑定gtalk聊天机器人。绑定帐号为[yourappid]@appspot.com。
+注意[yourappid]为你将要使用的app engine id。新浪会告诉你聊天机器人的帐号（一般为sinat064@gmail.com的形式）和验证码。
+
+* 编辑myid.py文件，把用户名、密码、验证码和申请到的App keys填入。
 
 ```console
      my_twitter_id=""
-     my_weibo_username=""
-     my_weibo_password=""
-     my_weibo_apikey=1234567890
+     my_weibo_bot=""
+     my_weibo_bot_verify_code=""
      my_tinycc_login=""
      my_tinycc_apikey=""
 ```
+* 上传代码到你的appengine
+* 用浏览器访问http://yourappid.appspot.com/initialize。
+* 到新浪页面http://app.weibo.com/tool/imbot 查看是否绑定成功，如不成功，重复上一步。
 
 部署
 ---
