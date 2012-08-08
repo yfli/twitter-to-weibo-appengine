@@ -58,6 +58,7 @@ License
 
 * http://code.google.com/p/twitter-feed/
 * http://atlee.ca/software/poster/
+* http://code.google.com/p/twitter2weiboviagtalk/
 
 联系
 ----
