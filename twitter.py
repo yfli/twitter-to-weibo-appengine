@@ -27,9 +27,9 @@ from poster.encode import multipart_encode, MultipartParam
 import tweepy
 from tweepy.error import TweepError
 
-from testid import my_twitter_id, my_weibo_username, my_weibo_password
-from testid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
-from testid import my_weibo_bot
+from myid import my_twitter_id, my_weibo_username, my_weibo_password
+from myid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
+from myid import my_weibo_bot
 
 class Twitter(db.Model):
     twid = db.StringProperty()

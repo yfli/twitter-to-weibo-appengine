@@ -2,7 +2,7 @@ from google.appengine.api import xmpp
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 import logging
-from testid import my_weibo_bot, my_weibo_bot_verify_code
+from myid import my_weibo_bot, my_weibo_bot_verify_code
 
 class XMPPHandler(webapp.RequestHandler):
     def post(self):
