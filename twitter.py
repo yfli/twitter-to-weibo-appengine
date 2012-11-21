@@ -14,16 +14,13 @@ import re
 import time
 import htmlentitydefs
 import urllib,Cookie
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import simplejson as json
 
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
 from google.appengine.api import xmpp
-from poster.encode import multipart_encode, MultipartParam
 
+from poster.encode import multipart_encode, MultipartParam
 import tweepy
 from tweepy.error import TweepError
 
@@ -31,9 +28,23 @@ from myid import my_twitter_id, my_weibo_username, my_weibo_password
 from myid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
 from myid import my_weibo_bot
 
-class Twitter(db.Model):
-    twid = db.StringProperty()
-    created = db.DateTimeProperty(auto_now_add=True)
+class Account(db.Model):
+    tw_account = db.StringProperty()
+    tw_token = db.StringProperty()
+    tw_last_msg_id = db.StringProperty()
+    wb_account = db.StringProperty()
+    wb_passwd = db.StringProperty()
+
+def get_last_msg_id(account):
+    account = Account.get_or_insert(key_name=account,
+            tw_account=account)
+    return account.tw_last_msg_id
+
+def set_last_msg_id(account, msg_id):
+    account = Account.get_or_insert(key_name=account,
+            tw_account=account)
+    account.tw_last_msg_id = msg_id
+    account.put()
 
 def unescape(text):
     """Removes HTML or XML character references 
@@ -60,23 +71,6 @@ def unescape(text):
                 pass
         return text # leave as is
     return re.sub("&#?\w+;", fixup, text)
-
-def getLatest():
-    msg=db.GqlQuery("SELECT * FROM Twitter ORDER BY created DESC")
-    x=msg.count()
-    if x:
-        return msg[0].twid
-    else:
-        return ""
-
-def deleteData(since_id):
-    if since_id:
-        q = db.GqlQuery("SELECT * FROM Twitter Where id < :1", since_id) 
-        results = q.fetch(100) 
-        db.delete(results)
-        return True
-    else:
-        return False
 
 def untco(url):
     try:
@@ -116,11 +110,33 @@ def short_tinycc(longurl):
     logging.debug("Error shorten %s in tinycc", longurl)
     return None
 
+def short_tinycc_json(longurl):
+
+    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),my_tinycc_login,my_tinycc_apikey)
+
+    try:
+        result = urlfetch.fetch(url)
+        if result.status_code != 200:
+            logging.error("Error connect to tinycc")
+            return None
+    except:
+        logging.error("Error connect to tinycc")
+        return None
+
+    jr = json.loads(result.content)
+    if jr.get("results") :
+        return jr.get("results").get("short_url")
+    else:
+        logging.error("Error short in tiny.cc: "+jr.get("errorMessage"))
+        return None
+
 def get_img_file_url(img_site_url):
     if not (img_site_url.startswith("http://flic.kr") or 
             img_site_url.startswith("http://www.flickr.com/photos") or 
             img_site_url.startswith("http://instagr.am") or 
+            img_site_url.startswith("http://instagram.com") or 
             img_site_url.startswith("http://yfrog.com") or 
+            img_site_url.startswith("http://littlemonsters.com/image") or 
             img_site_url.startswith("http://picplz.com") or
             img_site_url.startswith("http://twitter.com") or 
             img_site_url.startswith("http://twitpic.com") or 
@@ -131,41 +147,72 @@ def get_img_file_url(img_site_url):
 
     try:
         response = urlfetch.fetch(img_site_url)
-        if response.status_code == 200 :
-            if (img_site_url.startswith("http://flic.kr") or 
-                    img_site_url.startswith("http://www.flickr.com/photos") or 
-                    img_site_url.startswith("http://instagr.am") or 
-                    img_site_url.startswith("http://yfrog.com") or 
-                    img_site_url.startswith("http://picplz.com")) :
-                #picplz #flickr #instgram #yfrog, standard og:image
-                m = re.search(r"og:image\" content=\"([^<]+)\"", response.content)
-                if m:
-                    return m.group(1)
-                else:
-                    logging.debug("Do not find image file url for %s", img_site_url)
-                    return None
-            elif img_site_url.startswith("http://twitter.com") :
-                #twitter.com, no og:image 
-                m = re.search(r"img src=\"https://p.twimg.com/([^<]+)\"", response.content)
-                if m:
-                    return "http://p.twimg.com/"+m.group(1)+":large"
-                else:
-                    logging.debug("Do not find image file url for %s", img_site_url)
-                    return None
-            elif img_site_url.startswith("http://twitpic.com") :
-                #twitpic small thumbnail
-                #Not working
-                #seems twitpic/cloudfront.net is blocking gae requests for file, 
-                return "http://twitpic.com/show/large/" + img_site_url[19:]
+        if response.status_code != 200 :
+            return None
 
-            elif img_site_url.startswith("http://img.ly") :
-                #imgly, og:image at last
-                m = re.search(r"content=\"([^<]+)\" property=\"og:image\"", response.content)
-                if m:
-                    return m.group(1).replace("thumb", "large")
+        if (img_site_url.startswith("http://flic.kr") or 
+                img_site_url.startswith("http://www.flickr.com/photos")):
+            # return the largest img url of flickr
+            # (no more than 1024 as larger image has a different secret
+            m = re.search(r"baseURL: +\'([^\']+)\'", response.content)
+            if m:
+                base_url = m.group(1)
+            else:
+                return None
+
+            m = re.search(r"sizeMap: +\[([^<]+)\]", response.content)
+            if m:
+                size_map = ['_b', '_c', '_z',  '_m', '_n', '_s', '_q', '_sq', '_t']
+                for size in size_map:
+                    if m.group(1).find(size) != -1:
+                        return base_url.replace('.jpg', size+'.jpg')
                 else:
-                    logging.debug("Do not find image file url for %s", img_site_url)
-                    return None
+                    return base_url
+            else:
+                logging.debug("Do not find image file url for %s", img_site_url)
+                return None
+
+        if img_site_url.startswith("http://littlemonsters.com/image") : 
+            m = re.search(r"og:image\" content=\"([^<]+)\"", response.content)
+            if m:
+                return m.group(1).replace("_200.","_700.")
+            else:
+                return None
+                
+        if (img_site_url.startswith("http://instagr.am") or 
+                img_site_url.startswith("http://instagram.com") or 
+                img_site_url.startswith("http://yfrog.com") or 
+                img_site_url.startswith("http://littlemonsters.com/image") or 
+                img_site_url.startswith("http://picplz.com")) :
+            #picplz #flickr #instgram #yfrog, standard og:image
+            m = re.search(r"og:image\" content=\"([^<]+)\"", response.content)
+            if m:
+                return m.group(1)
+            else:
+                logging.debug("Do not find image file url for %s", img_site_url)
+                return None
+        elif img_site_url.startswith("http://twitter.com") :
+            #twitter.com, no og:image 
+            m = re.search(r"pbs\.twimg\.com/media/([^<]+)\.jpg", response.content)
+            if m:
+                return "http://pbs.twimg.com/media/"+m.group(1)+".jpg:large"
+            else:
+                logging.debug("Do not find image file url for %s", img_site_url)
+                return None
+        elif img_site_url.startswith("http://twitpic.com") :
+            #twitpic small thumbnail
+            #Not working
+            #seems twitpic/cloudfront.net is blocking gae requests for file, 
+            return "http://twitpic.com/show/large/" + img_site_url[19:]
+
+        elif img_site_url.startswith("http://img.ly") :
+            #imgly, og:image at last
+            m = re.search(r"content=\"([^<]+)\" property=\"og:image\"", response.content)
+            if m:
+                return m.group(1).replace("thumb", "large")
+            else:
+                logging.debug("Do not find image file url for %s", img_site_url)
+                return None
 
     except:
         logging.debug("Error fetch image url %s", img_site_url)
@@ -180,7 +227,7 @@ def replace_tco(msg):
         logging.debug("expanded: %s", expanded)
         if img_file_url == None:
             img_file_url = get_img_file_url(expanded)
-        reshortened = short_tinycc(expanded)
+        reshortened = short_tinycc_json(expanded)
         logging.debug("reshort: %s", reshortened)
         if reshortened != None:
             msg = msg.replace( orig, reshortened)
@@ -188,6 +235,7 @@ def replace_tco(msg):
             if expanded.startswith("http://t.co"):
                 expanded = "ForbidenURL"
             msg = msg.replace(orig, expanded)
+    logging.debug("img url: %s", img_file_url)
     return msg, img_file_url
 
 
@@ -257,13 +305,14 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
         return False
 
 #get one page of to user's replies, 20 messages at most. 
-def parseTwitter(twitter_id,since="",):
+def sync_twitter(twitter_id):
+
+    last_id = get_last_msg_id(twitter_id)
+
     twitter = tweepy.API()
+
     try:
-        if since:
-            user_timeline = twitter.user_timeline(screen_name=twitter_id, since_id=since)
-        else:
-            user_timeline = twitter.user_timeline(screen_name=twitter_id)
+        user_timeline = twitter.user_timeline(screen_name=twitter_id, since_id=last_id)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
             logging.error("Error to get twitter user_timeline, E: %s",e.reason)
@@ -275,21 +324,19 @@ def parseTwitter(twitter_id,since="",):
         text = unescape(tweet.text)
         text, img_url = replace_tco(text)
 
-        if text[0] != '@' : #do not sync iff @, sync RT@
-            print "<li>",twid,text,"</li><br />\n"
-            logging.debug("msg id=%s,msg:%s "%(twid, text))
-            #send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
-            send_sina_msg_gtalkbot(text)
+        if text[0] == '@' : #do not sync iff @, sync RT@
+            continue
 
-            # always log the twitter message. Non-sense to retry if it is only gfw-ed by sina 
-            msg = Twitter()
-            msg.twid = twid
-            msg.put()
+        print "<li>",twid,text,"</li><br />\n"
+        logging.debug("msg id=%s,msg:%s "%(twid, text))
+        #send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
+        send_sina_msg_gtalkbot(text)
+
+        last_id = tweet.id_str
+
+    set_last_msg_id(twitter_id, last_id)
+
     print "</ol></body></html>"
-
     print ""
 
-latest=getLatest() 
-deleteData(since_id=latest)
-parseTwitter(twitter_id=my_twitter_id,since=latest)
-#parseTwitter(twitter_id=my_twitter_id)
+sync_twitter(twitter_id=my_twitter_id)
