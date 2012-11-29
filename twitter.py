@@ -72,25 +72,28 @@ def unescape(text):
         return text # leave as is
     return re.sub("&#?\w+;", fixup, text)
 
+def untco_tcoonly(url):
+    try:
+        logging.debug("Fall back to TCO only unshort %s", url)
+        response = urlfetch.fetch(url,
+                method=urlfetch.HEAD, follow_redirects=False)
+        return response.headers['location']
+    except:
+        logging.debug("Error tco-only unshort %s", url)
+        traceback.print_exc(file=sys.stdout)
+        return url
+
 def untco(url):
     try:
         response = urlfetch.fetch(url,
                 method=urlfetch.HEAD)
     except:
-        logging.debug("Error unshort %s", url)
+        logging.debug("Error redirect unshort %s", url)
         traceback.print_exc(file=sys.stdout)
-        return url
+        return untco_tcoonly(url)
 
     if not response.final_url.startswith("http://"):
-        try:
-            logging.debug("Fall back to TCO only unshort %s", url)
-            response = urlfetch.fetch(url,
-                    method=urlfetch.HEAD, follow_redirects=False)
-            return response.headers['location']
-        except:
-            logging.debug("Error unshort %s", url)
-            traceback.print_exc(file=sys.stdout)
-            return url
+        return untco_tcoonly(url)
 
     return response.final_url
 
@@ -117,17 +120,14 @@ def short_tinycc_json(longurl):
     try:
         result = urlfetch.fetch(url)
         if result.status_code != 200:
-            logging.error("Error connect to tinycc")
-            return None
-    except:
-        logging.error("Error connect to tinycc")
-        return None
-
-    jr = json.loads(result.content)
-    if jr.get("results") :
-        return jr.get("results").get("short_url")
-    else:
-        logging.error("Error short in tiny.cc: "+jr.get("errorMessage"))
+            raise RuntimeError("tinycc returns non-200")
+        jr = json.loads(result.content)
+        if jr.get("results") :
+            return jr.get("results").get("short_url")
+        else:
+            raise RuntimeError("tiny.cc return error - "+jr.get("errorMessage"))
+    except Exception, err:
+        logging.error("Error:%s"%str(err))
         return None
 
 def get_img_file_url(img_site_url):
