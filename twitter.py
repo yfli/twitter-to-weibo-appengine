@@ -24,16 +24,8 @@ from poster.encode import multipart_encode, MultipartParam
 import tweepy
 from tweepy.error import TweepError
 
-from myid import my_twitter_id, my_weibo_username, my_weibo_password
-from myid import my_weibo_apikey, my_tinycc_login, my_tinycc_apikey
-from myid import my_weibo_bot
-
-class Account(db.Model):
-    tw_account = db.StringProperty()
-    tw_token = db.StringProperty()
-    tw_last_msg_id = db.StringProperty()
-    wb_account = db.StringProperty()
-    wb_passwd = db.StringProperty()
+from myid import *
+from models import Account
 
 def get_last_msg_id(account):
     account = Account.get_or_insert(key_name=account,
@@ -98,7 +90,7 @@ def untco(url):
     return response.final_url
 
 def short_tinycc(longurl):
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),my_tinycc_login,my_tinycc_apikey)
+    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
     result = urlfetch.fetch(url)
     if result.status_code == 200 :
         content = result.content
@@ -115,7 +107,7 @@ def short_tinycc(longurl):
 
 def short_tinycc_json(longurl):
 
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),my_tinycc_login,my_tinycc_apikey)
+    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
 
     try:
         result = urlfetch.fetch(url)
@@ -255,9 +247,9 @@ def get_image_data(url):
 
 
 def send_sina_msg_gtalkbot(msg, pic=None):
-    xmpp.send_presence(my_weibo_bot)
+    xmpp.send_presence(MY_WEIBO_BOT)
     time.sleep(0.1)
-    xmpp.send_message(my_weibo_bot, msg)
+    xmpp.send_message(MY_WEIBO_BOT, msg)
 
 def send_sina_msg_withpic(username,password,msg, pic=None):
 
@@ -266,7 +258,7 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
     header = {}
 
     payload_data = {}
-    payload_data['source'] = my_weibo_apikey
+    payload_data['source'] = MY_WEIBO_APIKEY
     payload_data['status'] = msg
 
     pic_data = None
@@ -329,7 +321,7 @@ def sync_twitter(twitter_id):
 
         print "<li>",twid,text,"</li><br />\n"
         logging.debug("msg id=%s,msg:%s "%(twid, text))
-        #send_sina_msg_withpic(my_weibo_username,my_weibo_password,text, pic=img_url)
+        #send_sina_msg_withpic(MY_WEIBO_USERNAME,MY_WEIBO_PASSWORD,text, pic=img_url)
         send_sina_msg_gtalkbot(text)
 
         last_id = tweet.id_str
@@ -339,4 +331,4 @@ def sync_twitter(twitter_id):
     print "</ol></body></html>"
     print ""
 
-sync_twitter(twitter_id=my_twitter_id)
+sync_twitter(twitter_id=MY_TWITTER_ID)
