@@ -27,17 +27,6 @@ from tweepy.error import TweepError
 from myid import *
 from models import Account
 
-def get_last_msg_id(account):
-    account = Account.get_or_insert(key_name=account,
-            tw_account=account)
-    return account.tw_last_msg_id
-
-def set_last_msg_id(account, msg_id):
-    account = Account.get_or_insert(key_name=account,
-            tw_account=account)
-    account.tw_last_msg_id = msg_id
-    account.put()
-
 def unescape(text):
     """Removes HTML or XML character references 
        and entities from a text string.
@@ -299,12 +288,20 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
 #get one page of to user's replies, 20 messages at most. 
 def sync_twitter(twitter_id):
 
-    last_id = get_last_msg_id(twitter_id)
+    account = Account.get_by_key_name(twitter_id)
+    if account is None:
+        return
 
-    twitter = tweepy.API()
+    last_id = account.tw_last_msg_id
+
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_request_token(account.tw_token_key, account.tw_token_secret)
+    auth.set_access_token(account.tw_access_key, account.tw_access_secret)
+
+    twitter = tweepy.API(auth)
 
     try:
-        user_timeline = twitter.user_timeline(screen_name=twitter_id, since_id=last_id)
+        user_timeline = twitter.user_timeline(screen_name=account.key().name(), since_id=last_id)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
             logging.error("Error to get twitter user_timeline, E: %s",e.reason)
@@ -326,7 +323,8 @@ def sync_twitter(twitter_id):
 
         last_id = tweet.id_str
 
-    set_last_msg_id(twitter_id, last_id)
+    account.tw_last_msg_id = last_id
+    account.put()
 
     print "</ol></body></html>"
     print ""
