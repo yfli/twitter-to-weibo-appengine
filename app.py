@@ -84,7 +84,7 @@ class CallbackPage(RequestHandler):
 
         self.response.out.write(
                 template.render('templates/callback.html', {
-                    'username': account.key() ,
+                    'username': account.key().name() ,
                     'key': account.tw_access_key,
                     'secret': account.tw_access_secret
                     }))
