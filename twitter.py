@@ -20,9 +20,10 @@ from google.appengine.api import urlfetch
 from google.appengine.ext import db
 from google.appengine.api import xmpp
 
-from poster.encode import multipart_encode, MultipartParam
 import tweepy
 from tweepy.error import TweepError
+import tweibopy
+from tweibopy.error import TweepError as TweibopyError
 
 from myid import *
 from models import Account
@@ -235,55 +236,8 @@ def get_image_data(url):
         return None
 
 
-def send_sina_msg_gtalkbot(msg, pic=None):
-    xmpp.send_presence(MY_WEIBO_BOT)
-    time.sleep(0.1)
-    xmpp.send_message(MY_WEIBO_BOT, msg)
-
-def send_sina_msg_withpic(username,password,msg, pic=None):
-
-    logging.debug("Send to Sina: %s", msg)
-
-    header = {}
-
-    payload_data = {}
-    payload_data['source'] = MY_WEIBO_APIKEY
-    payload_data['status'] = msg
-
-    pic_data = None
-    if pic != None:
-        pic_data = get_image_data(pic) 
-    if pic_data != None:
-        payload_data['pic'] = MultipartParam('pic', filename='abc.jpg',
-                filetype='image/jpeg',
-                value = pic_data)
-        update_url="http://api.t.sina.com.cn/statuses/upload.xml"
-        to_post, header = multipart_encode(payload_data)
-    else:
-        update_url="http://api.t.sina.com.cn/statuses/update.xml"
-        to_post = urllib.urlencode(payload_data)
-
-    auth=base64.b64encode(username+":"+password)
-    auth='Basic '+auth
-    header['Authorization']=auth
-
-    try:
-        result = urlfetch.fetch(url=update_url,
-                payload="".join(to_post),
-                method=urlfetch.POST,
-                headers=header)
-        print result.status_code
-        print result.content
-
-        if result.status_code == 200:
-            return True
-        else:
-            logging.error("Error update the message to sina, errorcode %s", result.status_code )
-            return False
-    except:
-        logging.debug("Error update the message to sina" )
-        traceback.print_exc(file=sys.stdout)
-        return False
+WB_CONSUMER_KEY="211160679"
+WB_CONSUMER_SECRET="63b64d531b98c2dbff2443816f274dd3"
 
 #get one page of to user's replies, 20 messages at most. 
 def sync_twitter(twitter_id):
@@ -307,6 +261,15 @@ def sync_twitter(twitter_id):
             logging.error("Error to get twitter user_timeline, E: %s",e.reason)
         return;
 
+    try:
+        wbauth = tweibopy.OAuthHandler(WB_CONSUMER_KEY, WB_CONSUMER_SECRET)
+        wbauth.get_xauth_access_token(MY_WEIBO_USERNAME,MY_WEIBO_PASSWORD)
+        weibo = tweibopy.API(wbauth, host='api.t.sina.com.cn', api_root='')
+    except TweibopyError, e:
+        if (e.response != None):
+            logging.error("Error to get wbauth with sina , E: %s",e.reason)
+        return;
+
     print "<html><body><ol>"
     for tweet in reversed(user_timeline):
         twid=tweet.id_str
@@ -318,9 +281,21 @@ def sync_twitter(twitter_id):
 
         print "<li>",twid,text,"</li><br />\n"
         logging.debug("msg id=%s,msg:%s "%(twid, text))
-        #send_sina_msg_withpic(MY_WEIBO_USERNAME,MY_WEIBO_PASSWORD,text, pic=img_url)
-        send_sina_msg_gtalkbot(text)
 
+        pic_data = None
+        if img_url != None:
+            pic_data = get_image_data(img_url) 
+
+        try:
+            if pic_data :
+                weibo.upload_status(text, "abc.jpg", filecontent=pic_data)
+            else:
+                weibo.update_status(text)
+        except TweibopyError, e:
+            logging.error("Err update to sina: %s ",e.reason )
+            if e.reason.startswith("40090"):
+                logging.error("too quick, skip this run ")
+                break
         last_id = tweet.id_str
 
     account.tw_last_msg_id = last_id
