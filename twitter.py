@@ -79,22 +79,6 @@ def untco(url):
 
     return response.final_url
 
-def short_tinycc(longurl):
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
-    result = urlfetch.fetch(url)
-    if result.status_code == 200 :
-        content = result.content
-        ##print "short content", content
-        errCode = re.search("<errorCode>0<", content)
-        if errCode != None:
-            short = re.findall(r"<shorturl>([^<]+)</shorturl>",content)
-            return short[0]
-        else:
-            logging.debug("tinycc Error: %s ", errCode)
-
-    logging.debug("Error shorten %s in tinycc", longurl)
-    return None
-
 def short_tinycc_json(longurl):
 
     url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
@@ -217,7 +201,7 @@ def replace_tco(msg):
             if expanded.startswith("http://t.co"):
                 expanded = "ForbidenURL"
             msg = msg.replace(orig, expanded)
-    logging.debug("img url: %s", img_file_url)
+    #logging.debug("img url: %s", img_file_url)
     return msg, img_file_url
 
 

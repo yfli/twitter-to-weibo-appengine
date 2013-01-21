@@ -7,22 +7,7 @@ handlers:
 - url: /twitter(.*)
   script: twitter.py
 
-- url: /initialize
-  script: initialize.py
-
-- url: /_ah/xmpp/message/chat/
-  script: weibo_chat.py
-
-- url: /_ah/xmpp/subscription/subscribed/
-  script: weibo_sub.py
-- url: /_ah/xmpp/subscription/subscribe/
-  script: weibo_sub.py
-
 - url: .*
   script : app.py
 
-inbound_services:
-- xmpp_message
-- xmpp_subscribe
-- xmpp_presence
 
