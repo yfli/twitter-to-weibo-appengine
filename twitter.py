@@ -201,7 +201,7 @@ def get_img_file_url(img_site_url):
         return None
 
 def replace_tco(msg):
-    t = re.findall(r"(http://t\.co/\S{8})", msg)
+    t = re.findall(r"(http://t\.co/\w+)", msg)
     img_file_url = None
     for orig in t:
         expanded = untco(orig)
