@@ -159,9 +159,9 @@ def get_img_file_url(img_site_url):
                 return None
         elif img_site_url.startswith("http://twitter.com") :
             #twitter.com, no og:image 
-            m = re.search(r"pbs\.twimg\.com/media/([^<]+)\.jpg", response.content)
+            m = re.search(r"pbs\.twimg\.com/media/([^<]+?):large", response.content)
             if m:
-                return "http://pbs.twimg.com/media/"+m.group(1)+".jpg:large"
+                return "http://pbs.twimg.com/media/"+m.group(1)
             else:
                 logging.debug("Do not find image file url for %s", img_site_url)
                 return None
