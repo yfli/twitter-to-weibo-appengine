@@ -79,6 +79,25 @@ def untco(url):
 
     return response.final_url
 
+def short_cbsso(longurl):
+
+    url = "http://cbs.so/?module=ShortURL&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
+
+    try:
+        result = urlfetch.fetch(url)
+        if result.final_url: #if 302 we need again fetch the final url
+            result = urlfetch.fetch(result.final_url)
+        if result.status_code != 200:
+            raise RuntimeError("cbsso returns non-200")
+        shorturl = result.content
+        if shorturl.startswith('http://cbs.so'):
+            return shorturl
+        else:
+            raise RuntimeError("cbsso wrong content" + shorturl )
+    except Exception, err:
+        logging.error("Error:%s"%str(err))
+        return None
+
 def short_tinycc_json(longurl):
 
     url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
@@ -193,7 +212,7 @@ def replace_tco(msg):
         logging.debug("expanded: %s", expanded)
         if img_file_url == None:
             img_file_url = get_img_file_url(expanded)
-        reshortened = short_tinycc_json(expanded)
+        reshortened = short_cbsso(expanded)
         logging.debug("reshort: %s", reshortened)
         if reshortened != None:
             msg = msg.replace( orig, reshortened)
