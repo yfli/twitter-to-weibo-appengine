@@ -1,16 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-
-    <head>
-        <title>推特同步到新浪微博 -- Twitter认证成功</title>
-    </head>
-
-    <body>
-        <h1>推特用户<b>{{username}}</b>认证成功!</h1>
-        <h1>Access token</h1>
-        <ul>
-            <li><b>Key:</b> {{key}}</li>
-            <li><b>Secret:</b> {{secret}}</li>
-        </ul>
-    </body>
-
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>推特同步到新浪微博 -- Twitter认证成功 </title>
+  </head>
+  <body>
+    <h1>推特用户 <font color="#ff6666"><i><b>{{account.tw_screenname}}</b></i></font>
+      认证成功!</h1>
+    {% if not account.wb_bot_sina %}
+    <h1>绑定微博Gtalk聊天机器人</h1>
+    <p>请到新浪微博工具页面<a target="_blank"
+        href="http://app.weibo.com/tool/imbot">http://app.weibo.com/tool/imbot</a>
+      绑定 <br>
+      <font color="#ff6666"><i><b>{{account.wb_bot_mine }}</b></i></font>
+      为Gtalk聊天机器人 , <br>
+      然后回到本页面填写Gtalk Bot验证码。<br>
+    </p>
+    <h1>输入微博Gtalk聊天机器人验证码</h1>
+    <form method="POST" action="../bindweibo">
+      <table border="1" cellpadding="2" cellspacing="2" width="100%">
+        <tbody>
+          <tr>
+            <td valign="top">微博Gtalk聊天机器人账号 </td>
+            <td valign="top"><input name="wb_bot"> </td>
+          </tr>
+          <tr>
+            <td valign="top">微博Gtalk聊天机器人 验证码:</td>
+            <td valign="top"><input name="wb_vericode"> </td>
+          </tr>
+        </tbody>
+      </table>
+      <input value="提交" type="submit"> <input name="username"
+        value="{{account.tw_screenname}}" type="hidden"></form>
+    {% else %}
+    <h1>已经在同步中，当前同步状态</h1>
+    <p>如果绑定不成功，可在此处更改</p>
+    <form method="POST" action="../bindweibo">
+      <table border="1" cellpadding="2" cellspacing="2" width="100%">
+        <tbody>
+          <tr>
+            <td valign="top">推特用户名</td>
+            <td valign="top"> <font color="#ff6666"><i><b>{{account.tw_screenname}}</b></i></font></td>
+          </tr>
+          <tr>
+            <td valign="top">最后一次同步信息</td>
+            <td valign="top"> <font color="#ff6666"><i><b>{{account.tw_last_msg}} </b></i></font> </td>
+          </tr>
+          <tr>
+            <td valign="top">微博Gtalk聊天机器人账号 </td>
+            <td valign="top"> <input value="{{account.wb_bot_sina}}"
+                name="wb_bot"> </td>
+          </tr>
+          <tr>
+            <td valign="top">微博Gtalk聊天机器人验证码:</td>
+            <td valign="top"> <input
+                value="{{account.wb_bot_vericode}}" name="wb_vericode">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <input name="username" value="{{account.tw_screenname}}"
+        type="hidden"> <input value="更改" type="submit"></form>
+    {% endif %}
+  </body>
 </html>

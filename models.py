@@ -2,14 +2,16 @@
 from google.appengine.ext import db
 
 class Account(db.Model):
+    tw_screenname = db.StringProperty()
     tw_token_key = db.StringProperty()
     tw_token_secret = db.StringProperty()
     tw_access_key = db.StringProperty()
     tw_access_secret = db.StringProperty()
     tw_last_msg_id = db.StringProperty()
-    wb_account = db.StringProperty()
-    wb_passwd = db.StringProperty()
-    wb_gtalk_bot = db.StringProperty()
+    tw_last_msg = db.StringProperty()
+    wb_bot_mine = db.StringProperty()
+    wb_bot_sina = db.StringProperty()
+    wb_bot_vericode = db.StringProperty()
 
 class OAuthToken(db.Model):
     token_key = db.StringProperty(required=True)

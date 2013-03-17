@@ -3,7 +3,8 @@ import logging
 
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext.webapp import template, RequestHandler, WSGIApplication
-from google.appengine.api import users
+from google.appengine.api import xmpp
+from google.appengine.api.app_identity import get_application_id 
 
 import tweepy
 
@@ -43,7 +44,7 @@ class CallbackPage(RequestHandler):
         oauth_verifier = self.request.get("oauth_verifier", None)
         if oauth_token is None:
             # Invalid request!
-            self.response.out.write(template.render('error.html', {
+            self.response.out.write(template.render('templates/error.html', {
                     'message': 'Missing required parameters!'
             }))
             return
@@ -52,7 +53,7 @@ class CallbackPage(RequestHandler):
         request_token = OAuthToken.gql("WHERE token_key=:key", key=oauth_token).get()
         if request_token is None:
             # We do not seem to have this request token, show an error.
-            self.response.out.write(template.render('error.html', {'message': 'Invalid token!'}))
+            self.response.out.write(template.render('templates/error.html', {'message': 'Invalid token!'}))
             return
 
         # Rebuild the auth handler
@@ -65,7 +66,7 @@ class CallbackPage(RequestHandler):
             username = auth.get_username();
         except tweepy.TweepError, e:
             # Failed to get access token
-            self.response.out.write( template.render('error.html', {'message': e}))
+            self.response.out.write( template.render('templates/error.html', {'message': e}))
             return
         
         # Lookup the account
@@ -74,26 +75,39 @@ class CallbackPage(RequestHandler):
             # We do not seem to have this account. create one
             account = Account(key_name = username)
 
+        account.tw_screenname = username
         account.tw_token_key = request_token.token_key
         account.tw_token_secret =  request_token.token_secret
         account.tw_access_key = auth.access_token.key
         account.tw_access_secret = auth.access_token.secret
+        account.wb_bot_mine = username + "@" + get_application_id() + ".appspotchat.com" 
         account.put();
 
         request_token.delete();
 
         self.response.out.write(
-                template.render('templates/callback.html', {
-                    'username': account.key().name() ,
-                    'key': account.tw_access_key,
-                    'secret': account.tw_access_secret
-                    }))
-        #self.redirect('/home')
+                template.render('templates/callback.html', {'account':account}))
       
+# bindweibo bot
+class BindWeiboPage(RequestHandler):
+
+    def post(self):
+        username = self.request.get("username")
+        account = Account.get_by_key_name(username)
+        account.wb_bot_sina = self.request.get("wb_bot")
+        account.wb_bot_vericode = self.request.get("wb_vericode")
+        account.put()
+
+        xmpp.send_invite(account.wb_bot_sina, from_jid=account.wb_bot_mine)
+        xmpp.send_message(account.wb_bot_sina, account.wb_bot_vericode, from_jid=account.wb_bot_mine)
+
+        self.redirect('/binding.html')
+
 # Construct the WSGI application
 application = WSGIApplication([
 
         (r'/', MainPage),
+        (r'/bindweibo', BindWeiboPage),
         (r'/oauth/callback', CallbackPage),
 
 ], debug=True)

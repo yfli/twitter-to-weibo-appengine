@@ -78,6 +78,26 @@ def untco(url):
 
     return response.final_url
 
+def short_cbsso(longurl):
+
+    url = "http://cbs.so/?module=ShortURL&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
+
+    try:
+        result = urlfetch.fetch(url)
+        while result.final_url != None: #if 302 we need again fetch the final url
+            logging.debug("302, fetch again:"+result.final_url)
+            result = urlfetch.fetch(result.final_url)
+        if result.status_code != 200:
+            raise RuntimeError("cbsso returns non-200")
+        shorturl = result.content
+        if shorturl.startswith('http://cbs.so'):
+            return shorturl
+        else:
+            raise RuntimeError("cbsso wrong content" + shorturl )
+    except Exception, err:
+        logging.error("Error:%s"%str(err))
+        return None
+
 def short_tinycc(longurl):
     url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
     result = urlfetch.fetch(url)
@@ -208,7 +228,7 @@ def replace_tco(msg):
         logging.debug("expanded: %s", expanded)
         if img_file_url == None:
             img_file_url = get_img_file_url(expanded)
-        reshortened = short_tinycc_json(expanded)
+        reshortened = short_cbsso(expanded)
         logging.debug("reshort: %s", reshortened)
         if reshortened != None:
             msg = msg.replace( orig, reshortened)
@@ -235,10 +255,10 @@ def get_image_data(url):
         return None
 
 
-def send_sina_msg_gtalkbot(msg, pic=None):
-    xmpp.send_presence(MY_WEIBO_BOT)
+def send_sina_msg_gtalkbot(account, msg):
+    xmpp.send_presence(account.wb_bot_sina, from_jid=account.wb_bot_mine)
     time.sleep(0.1)
-    xmpp.send_message(MY_WEIBO_BOT, msg)
+    xmpp.send_message(account.wb_bot_sina, msg, from_jid=account.wb_bot_mine)
 
 def send_sina_msg_withpic(username,password,msg, pic=None):
 
@@ -286,13 +306,13 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
         return False
 
 #get one page of to user's replies, 20 messages at most. 
-def sync_twitter(twitter_id):
+def sync_twitter(account):
 
-    account = Account.get_by_key_name(twitter_id)
     if account is None:
         return
 
     last_id = account.tw_last_msg_id
+    last_msg = account.tw_last_msg
 
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_request_token(account.tw_token_key, account.tw_token_secret)
@@ -318,15 +338,18 @@ def sync_twitter(twitter_id):
 
         print "<li>",twid,text,"</li><br />\n"
         logging.debug("msg id=%s,msg:%s "%(twid, text))
-        #send_sina_msg_withpic(MY_WEIBO_USERNAME,MY_WEIBO_PASSWORD,text, pic=img_url)
-        send_sina_msg_gtalkbot(text)
+        send_sina_msg_gtalkbot(account, text)
 
         last_id = tweet.id_str
+        last_msg = text
 
     account.tw_last_msg_id = last_id
+    account.tw_last_msg = last_msg
     account.put()
 
     print "</ol></body></html>"
     print ""
 
-sync_twitter(twitter_id=MY_TWITTER_ID)
+for account in Account.all():
+    sync_twitter(account)
+
