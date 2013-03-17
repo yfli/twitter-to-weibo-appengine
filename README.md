@@ -6,13 +6,13 @@
 安装
 ---
 
-下载本项目代码。使用git或直接下载[zip包](https://github.com/yfli/twitter-to-weibo-appengine/zipball/master)
+下载本项目代码。使用git或直接下载[zip包](https://github.com/yfli/twitter-to-weibo-appengine/zipball/gtalkbot_br)
 
 安装步骤:
 
 * 申请一个Twitter API https://dev.twitter.com/, Callback URL为 http://'youappid'.appspot.com/oauth/callback. 更改myid.py中的CONSUMER_KEY, CONSUMER_SECRET及CALLBACK值
 * 上传代码到你的appengine
-* 用浏览器访问http://yourappid.appspot.com/并按指引操作
+* 用浏览器访问http://yourappid.appspot.com/ ,按指示操作
 * Done
 
 部署
@@ -29,7 +29,7 @@
 示例
 ---
 
-调试用App[http://urfatu-tw-weibo.appspot.com](http://urfatu-tw-weibo.appspot.com)
+调试用App [http://urfatu-tw-weibo.appspot.com](http://urfatu-tw-weibo.appspot.com)
 
 一个Lady Gaga的同步。Lady Gaga [twitter](https://twitter.com/ladygaga), 
 Lady Gaga [微博](http://weibo.com/u/2841791740)
@@ -56,6 +56,7 @@ Changelog
 ---------
 
 - ver 1.0 2013/3/20
+ 
     Major release. No need to deploy app for yourself, but use App setup by others.  
     No need to change twitter or weibo id in code. Directly binding gtalk on webpage.
     Use gtalk bot to sync. Made a mistake that thought gtalk was removed from sina while it is still available.
