@@ -1,12 +1,12 @@
 同步twitter到新浪微博
 ====================
 
-部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽。
+部署在Google Appengine上，自动同步twitter到新浪微博。
 
 安装部署
 ---
 
-下载本项目代码。使用git或直接下载[zip](https://github.com/yfli/twitter-to-weibo-appengine/zipball/master)包
+下载本项目代码。使用git或直接下载稳定版本[zip](https://github.com/yfli/twitter-to-weibo-appengine/archive/v1.0.zip)包
 
 安装步骤:
 
