@@ -3,10 +3,10 @@
 
 部署在Google Appengine上，自动同步twitter到新浪微博，自动转换短链接以防止被屏蔽。
 
-安装
+安装部署
 ---
 
-下载本项目代码。使用git或直接下载[zip包](https://github.com/yfli/twitter-to-weibo-appengine/zipball/gtalkbot_br)
+下载本项目代码。使用git或直接下载[zip](https://github.com/yfli/twitter-to-weibo-appengine/zipball/master)包
 
 安装步骤:
 
@@ -14,17 +14,6 @@
 * 上传代码到你的appengine
 * 用浏览器访问http://yourappid.appspot.com/ ,按指示操作
 * Done
-
-部署
----
-
-更改app.yaml中的application id，上传到Google App Engine上。
-
-部署到Google App Engine可参看下面两个教程。
-
-* [Google App Engine 入门:上传应用程序](http://blog.xuming.net/2008/05/google-app-engine-toturial-9.html)
-* [Google App Engine 6步上手教程](http://www.cnblogs.com/2011sydney/archive/2009/07/23/1529637.html)
-
 
 示例
 ---
