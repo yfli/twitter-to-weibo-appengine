@@ -8,7 +8,7 @@ class Account(db.Model):
     tw_access_key = db.StringProperty()
     tw_access_secret = db.StringProperty()
     tw_last_msg_id = db.StringProperty()
-    tw_last_msg = db.StringProperty()
+    tw_last_msg = db.StringProperty(multiline=True)
     wb_bot_mine = db.StringProperty()
     wb_bot_sina = db.StringProperty()
     wb_bot_vericode = db.StringProperty()
