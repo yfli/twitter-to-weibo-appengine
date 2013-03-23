@@ -14,7 +14,7 @@ import re
 import time
 import htmlentitydefs
 import urllib,Cookie
-import simplejson as json
+import json
 
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
@@ -80,7 +80,8 @@ def untco(url):
 
 def short_cbsso(longurl):
 
-    url = "http://cbs.so/?module=ShortURL&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
+    url = "http://cbs.so/?module=ShortURL" \
+            "&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
 
     try:
         result = urlfetch.fetch(url)
@@ -298,7 +299,8 @@ def send_sina_msg_withpic(username,password,msg, pic=None):
         if result.status_code == 200:
             return True
         else:
-            logging.error("Error update the message to sina, errorcode %s", result.status_code )
+            logging.error("Error update the message to sina, errorcode %s",
+                result.status_code )
             return False
     except:
         logging.debug("Error update the message to sina" )
@@ -321,10 +323,12 @@ def sync_twitter(account):
     twitter = tweepy.API(auth)
 
     try:
-        user_timeline = twitter.user_timeline(screen_name=account.key().name(), since_id=last_id)
+        user_timeline = twitter.user_timeline(
+            screen_name=account.tw_screenname, since_id=last_id)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
-            logging.error("Error to get twitter user_timeline, E: %s",e.reason)
+            logging.error("Error to get twitter %s user_timeline, E: %s",
+                account.tw_screenname,e.reason)
         return;
 
     print "<html><body><ol>"

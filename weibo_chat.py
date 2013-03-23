@@ -1,18 +1,11 @@
 from google.appengine.api import xmpp
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 import logging
+import webapp2
 
-class XMPPHandler(webapp.RequestHandler):
+class XMPPHandler(webapp2.RequestHandler):
     def post(self):
         message = xmpp.Message(self.request.POST)
-        logging.debug("webo replay:%s", message.body)
+        logging.debug("weibo %s reply:%s",message.sender, message.body)
 
-application = webapp.WSGIApplication([('/_ah/xmpp/message/chat/', XMPPHandler)],
-                                     debug=True)
+app = webapp2.WSGIApplication([('/_ah/xmpp/message/chat/', XMPPHandler)], debug=True)
 
-def main():
-    run_wsgi_app(application)
-
-if __name__ == "__main__":
-    main()

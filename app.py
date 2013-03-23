@@ -1,8 +1,6 @@
-import os
 import logging
-
-from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.ext.webapp import template, RequestHandler, WSGIApplication
+import webapp2
+from google.appengine.ext.webapp import template
 from google.appengine.api import xmpp
 from google.appengine.api.app_identity import get_application_id 
 
@@ -12,7 +10,7 @@ from models import OAuthToken, Account
 from myid import *
 
 
-class MainPage(RequestHandler):
+class MainPage(webapp2.RequestHandler):
 
     def get(self):
         # Build a new oauth handler and display authorization url to user.
@@ -37,7 +35,7 @@ class MainPage(RequestHandler):
         request_token.put()
 
 # Callback page (/oauth/callback)
-class CallbackPage(RequestHandler):
+class CallbackPage(webapp2.RequestHandler):
 
     def get(self):
         oauth_token = self.request.get("oauth_token", None)
@@ -89,7 +87,7 @@ class CallbackPage(RequestHandler):
                 template.render('templates/callback.html', {'account':account}))
       
 # bindweibo bot
-class BindWeiboPage(RequestHandler):
+class BindWeiboPage(webapp2.RequestHandler):
 
     def post(self):
         username = self.request.get("username")
@@ -103,18 +101,8 @@ class BindWeiboPage(RequestHandler):
 
         self.redirect('/binding.html')
 
-# Construct the WSGI application
-application = WSGIApplication([
-
+app = webapp2.WSGIApplication(routes=[
         (r'/', MainPage),
         (r'/bindweibo', BindWeiboPage),
         (r'/oauth/callback', CallbackPage),
-
 ], debug=True)
-
-def main():
-    run_wsgi_app(application)
-
-# Run the WSGI application
-if __name__ == '__main__':
-    main()

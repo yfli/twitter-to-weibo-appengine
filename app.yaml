@@ -1,7 +1,12 @@
 application: urfatu-tw-weibo
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: false
+
+libraries:
+- name: webapp2
+  version: "latest"
 
 handlers:
 - url: /twitter(.*)
@@ -12,11 +17,12 @@ handlers:
   upload: static/binding.html
 
 - url: /_ah/xmpp/message/chat/
-  script: weibo_chat.py
+  script: weibo_chat.app
 
 - url: .*
-  script : app.py
+  script : app.app
 
 inbound_services:
 - xmpp_message
+
 
