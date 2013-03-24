@@ -258,7 +258,7 @@ def get_image_data(url):
 
 def send_sina_msg_gtalkbot(account, msg):
     xmpp.send_presence(account.wb_bot_sina, from_jid=account.wb_bot_mine)
-    time.sleep(0.1)
+    time.sleep(5)
     xmpp.send_message(account.wb_bot_sina, msg, from_jid=account.wb_bot_mine)
 
 def send_sina_msg_withpic(username,password,msg, pic=None):
@@ -324,7 +324,7 @@ def sync_twitter(account):
 
     try:
         user_timeline = twitter.user_timeline(
-            screen_name=account.tw_screenname, since_id=last_id)
+            screen_name=account.tw_screenname, since_id=last_id, count=5)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
             logging.error("Error to get twitter %s user_timeline, E: %s",
