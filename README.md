@@ -6,7 +6,7 @@
 安装部署
 ---
 
-下载本项目代码。使用git或直接下载稳定版本[zip](https://github.com/yfli/twitter-to-weibo-appengine/archive/v1.0.zip)包
+下载本项目代码。使用git或直接下载稳定版本[zip](https://github.com/yfli/twitter-to-weibo-appengine/archive/v1.1.zip)包
 
 安装步骤:
 
