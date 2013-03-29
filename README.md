@@ -1,7 +1,7 @@
 同步twitter到新浪微博
 ====================
 
-部署在Google Appengine上，自动同步twitter到新浪微博。
+部署在Google Appengine上，自动同步twitter到新浪微博。需要同步图片请看[app_br branch](https://github.com/yfli/twitter-to-weibo-appengine/tree/app_br)
 
 安装部署
 ---
@@ -43,6 +43,11 @@ License
 
 Changelog
 ---------
+
+- ver 1.1 2013/3/24
+    
+    Upgrade to python 2.7   
+    Fix bug: support multiline message
 
 - ver 1.0 2013/3/20
  
