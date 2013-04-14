@@ -20,7 +20,6 @@ from google.appengine.api import urlfetch
 from google.appengine.ext import db
 from google.appengine.api import xmpp
 
-from poster.encode import multipart_encode, MultipartParam
 import tweepy
 from tweepy.error import TweepError
 
@@ -260,52 +259,6 @@ def send_sina_msg_gtalkbot(account, msg):
     xmpp.send_presence(account.wb_bot_sina, from_jid=account.wb_bot_mine)
     time.sleep(5)
     xmpp.send_message(account.wb_bot_sina, msg, from_jid=account.wb_bot_mine)
-
-def send_sina_msg_withpic(username,password,msg, pic=None):
-
-    logging.debug("Send to Sina: %s", msg)
-
-    header = {}
-
-    payload_data = {}
-    payload_data['source'] = MY_WEIBO_APIKEY
-    payload_data['status'] = msg
-
-    pic_data = None
-    if pic != None:
-        pic_data = get_image_data(pic) 
-    if pic_data != None:
-        payload_data['pic'] = MultipartParam('pic', filename='abc.jpg',
-                filetype='image/jpeg',
-                value = pic_data)
-        update_url="http://api.t.sina.com.cn/statuses/upload.xml"
-        to_post, header = multipart_encode(payload_data)
-    else:
-        update_url="http://api.t.sina.com.cn/statuses/update.xml"
-        to_post = urllib.urlencode(payload_data)
-
-    auth=base64.b64encode(username+":"+password)
-    auth='Basic '+auth
-    header['Authorization']=auth
-
-    try:
-        result = urlfetch.fetch(url=update_url,
-                payload="".join(to_post),
-                method=urlfetch.POST,
-                headers=header)
-        print result.status_code
-        print result.content
-
-        if result.status_code == 200:
-            return True
-        else:
-            logging.error("Error update the message to sina, errorcode %s",
-                result.status_code )
-            return False
-    except:
-        logging.debug("Error update the message to sina" )
-        traceback.print_exc(file=sys.stdout)
-        return False
 
 #get one page of to user's replies, 20 messages at most. 
 def sync_twitter(account):
