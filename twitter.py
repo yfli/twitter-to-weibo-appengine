@@ -8,16 +8,14 @@ if sys.getdefaultencoding() != default_encoding:
     reload(sys)
     sys.setdefaultencoding(default_encoding)
 import traceback
-import base64
 import logging
 import re
 import time
 import htmlentitydefs
-import urllib,Cookie
+import urllib
 import json
 
 from google.appengine.api import urlfetch
-from google.appengine.ext import db
 from google.appengine.api import xmpp
 
 import tweepy
@@ -94,39 +92,6 @@ def short_cbsso(longurl):
             return shorturl
         else:
             raise RuntimeError("cbsso wrong content" + shorturl )
-    except Exception, err:
-        logging.error("Error:%s"%str(err))
-        return None
-
-def short_tinycc(longurl):
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=xml&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
-    result = urlfetch.fetch(url)
-    if result.status_code == 200 :
-        content = result.content
-        ##print "short content", content
-        errCode = re.search("<errorCode>0<", content)
-        if errCode != None:
-            short = re.findall(r"<shorturl>([^<]+)</shorturl>",content)
-            return short[0]
-        else:
-            logging.debug("tinycc Error: %s ", errCode)
-
-    logging.debug("Error shorten %s in tinycc", longurl)
-    return None
-
-def short_tinycc_json(longurl):
-
-    url = "http://tiny.cc/?c=rest_api&m=shorten&version=2.0.3&format=json&longUrl=%s&login=%s&apiKey=%s"%(urllib.quote_plus(longurl),MY_TINYCC_LOGIN,MY_TINYCC_APIKEY)
-
-    try:
-        result = urlfetch.fetch(url)
-        if result.status_code != 200:
-            raise RuntimeError("tinycc returns non-200")
-        jr = json.loads(result.content)
-        if jr.get("results") :
-            return jr.get("results").get("short_url")
-        else:
-            raise RuntimeError("tiny.cc return error - "+jr.get("errorMessage"))
     except Exception, err:
         logging.error("Error:%s"%str(err))
         return None
@@ -284,7 +249,6 @@ def sync_twitter(account):
                 account.tw_screenname,e.reason)
         return;
 
-    print "<html><body><ol>"
     for tweet in reversed(user_timeline):
         twid=tweet.id_str
         text = unescape(tweet.text)
@@ -293,7 +257,6 @@ def sync_twitter(account):
         if text[0] == '@' : #do not sync iff @, sync RT@
             continue
 
-        print "<li>",twid,text,"</li><br />\n"
         logging.debug("msg id=%s,msg:%s "%(twid, text))
         send_sina_msg_gtalkbot(account, text)
 
@@ -303,9 +266,6 @@ def sync_twitter(account):
     account.tw_last_msg_id = last_id
     account.tw_last_msg = last_msg
     account.put()
-
-    print "</ol></body></html>"
-    print ""
 
 for account in Account.all():
     sync_twitter(account)
