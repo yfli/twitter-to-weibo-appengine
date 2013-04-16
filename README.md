@@ -18,10 +18,11 @@
 示例
 ---
 
-调试用App [http://urfatu-tw-weibo.appspot.com](http://urfatu-tw-weibo.appspot.com)
+[http://twitter8weibo.appspot.com](http://twitter8weibo.appspot.com)
 
-一个Lady Gaga的同步。Lady Gaga [twitter](https://twitter.com/ladygaga), 
-Lady Gaga [微博](http://weibo.com/u/2841791740)
+Lady Gaga同步
+* Lady Gaga [twitter](https://twitter.com/ladygaga) 
+* Lady Gaga [微博](http://weibo.com/u/2841791740)
 
 License
 -------
@@ -32,7 +33,7 @@ License
 本项目参考/使用了以下项目
 
 * http://code.google.com/p/twitter-feed/
-* http://atlee.ca/software/poster/
+* https://github.com/michaelliao/sinaweibopy
 * http://code.google.com/p/twitter2weiboviagtalk/
 
 联系
@@ -43,17 +44,21 @@ License
 
 Changelog
 ---------
+- app_br ver 1.0 2013-4-16
+
+    Incorporate many changes in master branch    
+    Use non-audit app to send message to sina
 
 - ver 1.1 2013/3/24
-    
+
     Upgrade to python 2.7   
     Fix bug: support multiline message
 
 - ver 1.0 2013/3/20
- 
+
     Major release. No need to deploy app for yourself, but use App setup by others.  
-    No need to change twitter or weibo id in code. Directly binding gtalk on webpage.
-    Use gtalk bot to sync. Made a mistake that thought gtalk was removed from sina while it is still available.
+    No need to change twitter or weibo id in code. Directly binding gtalk on webpage.    
+    Use gtalk bot to sync. Made a mistake that thought gtalk was removed from sina while it is still available.    
     Tiny.cc is blocked by sina since 3/14, change to another short url
 
 - ver 0.4 2013/1/20
