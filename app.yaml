@@ -1,13 +1,22 @@
-application: urfatu-tw-weibo
+application: twitter8weibo-app
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: false
+
+libraries:
+- name: webapp2
+  version: "latest"
 
 handlers:
 - url: /twitter(.*)
   script: twitter.py
 
+- url: /binding.html
+  static_files: static/binding.html
+  upload: static/binding.html
+
 - url: .*
-  script : app.py
+  script : app.app
 
 

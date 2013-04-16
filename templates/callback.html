@@ -1,16 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-
-    <head>
-        <title>推特同步到新浪微博 -- Twitter认证成功</title>
-    </head>
-
-    <body>
-        <h1>推特用户<b>{{username}}</b>认证成功!</h1>
-        <h1>Access token</h1>
-        <ul>
-            <li><b>Key:</b> {{key}}</li>
-            <li><b>Secret:</b> {{secret}}</li>
-        </ul>
-    </body>
-
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>推特同步到新浪微博 -- Twitter认证成功 </title>
+  </head>
+  <body>
+    <h1>推特用户 <font color="#ff6666"><i><b>{{account.tw_screenname}}</b></i></font>
+      认证成功!</h1>
+    {% if not account.wb_access_token %}
+    <h1>输入微博应用的Access Token</h1>
+    <ol>
+        <li>
+        请到新浪微博开放平台工具<a target="_blank" href="http://open.weibo.com">http://open.weibo.com</a>
+        开通开发者身份 
+        </li>
+        <li>
+        请到微博开放平台移动应用页面<a target="_blank"
+            href="http://open.weibo.com/development/mobile">http://open.weibo.com/development/mobile</a>
+        创建一个移动应用
+        </li>
+        <li>
+        请到微博API测试工具页面<a target="_blank"
+            href="http://open.weibo.com/tools/console">http://open.weibo.com/tools/console</a>
+        获取刚刚创建的移动应用的Access Token，填入下表
+        </li>
+    </ol>
+    <form method="POST" action="../bindweibo">
+      <table border="1" cellpadding="2" cellspacing="2" width="100%">
+        <tbody>
+          <tr>
+            <td valign="top">微博应用Access Token </td>
+            <td valign="top"><input name="wb_access_token"> </td>
+          </tr>
+        </tbody>
+      </table>
+      <input value="提交" type="submit"> <input name="username"
+        value="{{account.tw_screenname}}" type="hidden"></form>
+    {% else %}
+    <h1>已经开始同步，当前同步状态</h1>
+    <p>如果微博应用Access Token更改，可在此处更新</p>
+    <form method="POST" action="../bindweibo">
+      <table border="1" cellpadding="2" cellspacing="2" width="100%">
+        <tbody>
+          <tr>
+            <td valign="top">推特用户名</td>
+            <td valign="top"> <font color="#ff6666"><i><b>{{account.tw_screenname}}</b></i></font></td>
+          </tr>
+          <tr>
+            <td valign="top">最后一次同步信息</td>
+            <td valign="top"> <font color="#ff6666"><i><b>{{account.tw_last_msg}} </b></i></font> </td>
+          </tr>
+          <tr>
+            <td valign="top">微博应用Access Token </td>
+            <td valign="top"> <input value="{{account.wb_access_token}}"
+                name="wb_access_token"> </td>
+          </tr>
+        </tbody>
+      </table>
+      <input name="username" value="{{account.tw_screenname}}"
+        type="hidden"> <input value="更改" type="submit"></form>
+    {% endif %}
+  </body>
 </html>

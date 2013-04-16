@@ -14,16 +14,22 @@ import re
 import time
 import htmlentitydefs
 import urllib,Cookie
-import simplejson as json
+import json
+import urllib2
 
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
 from google.appengine.api import xmpp
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 import tweepy
 from tweepy.error import TweepError
-import tweibopy
-from tweibopy.error import TweepError as TweibopyError
+
+from weibo import APIClient, APIError
 
 from myid import *
 from models import Account
@@ -81,11 +87,13 @@ def untco(url):
 
 def short_cbsso(longurl):
 
-    url = "http://cbs.so/?module=ShortURL&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
+    url = "http://cbs.so/?module=ShortURL" \
+            "&file=Add&mode=API&url=%s"%(urllib.quote_plus(longurl))
 
     try:
         result = urlfetch.fetch(url)
-        if result.final_url: #if 302 we need again fetch the final url
+        while result.final_url != None: #if 302 we need again fetch the final url
+            logging.debug("302, fetch again:"+result.final_url)
             result = urlfetch.fetch(result.final_url)
         if result.status_code != 200:
             raise RuntimeError("cbsso returns non-200")
@@ -243,13 +251,13 @@ WB_CONSUMER_KEY="211160679"
 WB_CONSUMER_SECRET="63b64d531b98c2dbff2443816f274dd3"
 
 #get one page of to user's replies, 20 messages at most. 
-def sync_twitter(twitter_id):
+def sync_twitter(account):
 
-    account = Account.get_by_key_name(twitter_id)
     if account is None:
         return
 
     last_id = account.tw_last_msg_id
+    last_msg = account.tw_last_msg
 
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_request_token(account.tw_token_key, account.tw_token_secret)
@@ -258,22 +266,17 @@ def sync_twitter(twitter_id):
     twitter = tweepy.API(auth)
 
     try:
-        user_timeline = twitter.user_timeline(screen_name=account.key().name(), since_id=last_id)
+        user_timeline = twitter.user_timeline(screen_name=account.tw_screenname, since_id=last_id)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
             logging.error("Error to get twitter user_timeline, E: %s",e.reason)
         return;
 
-    try:
-        wbauth = tweibopy.OAuthHandler(WB_CONSUMER_KEY, WB_CONSUMER_SECRET)
-        wbauth.get_xauth_access_token(MY_WEIBO_USERNAME,MY_WEIBO_PASSWORD)
-        weibo = tweibopy.API(wbauth, host='api.t.sina.com.cn', api_root='')
-    except TweibopyError, e:
-        if (e.response != None):
-            logging.error("Error to get wbauth with sina , E: %s",e.reason)
-        return;
+    wbclient = APIClient(app_key="fake", app_secret='fake',
+            redirect_uri='fake')
+    wbclient.set_access_token(account.wb_access_token, '9999')
 
-    print "<html><body><ol>"
+    #print "<html><body><ol>"
     for tweet in reversed(user_timeline):
         twid=tweet.id_str
         text = unescape(tweet.text)
@@ -282,7 +285,7 @@ def sync_twitter(twitter_id):
         if text[0] == '@' : #do not sync iff @, sync RT@
             continue
 
-        print "<li>",twid,text,"</li><br />\n"
+        #print "<li>",twid,text,"</li><br />\n"
         logging.debug("msg id=%s,msg:%s "%(twid, text))
 
         pic_data = None
@@ -291,20 +294,30 @@ def sync_twitter(twitter_id):
 
         try:
             if pic_data :
-                weibo.upload_status(text, "abc.jpg", filecontent=pic_data)
+                wbclient.statuses.upload.post(status=text, pic=StringIO(pic_data))
             else:
-                weibo.update_status(text)
-        except TweibopyError, e:
-            logging.error("Err update to sina: %s ",e.reason )
-            if e.reason.startswith("40090"):
+                wbclient.statuses.update.post(status=text)
+        except APIError, e:
+            logging.error("Err update to sina: %s ",e.error )
+            if e.error_code == 10023 or e.error_code == 20016:
                 logging.error("too quick, skip this run ")
                 break
+        except urllib2.HTTPError, e:
+            logging.error("Err connect to sina, HTTPError")
+        except Exception, e:
+            logging.error("Err update to sina, %s", str(e))
+            break
+
         last_id = tweet.id_str
+        last_msg = text
 
     account.tw_last_msg_id = last_id
+    account.tw_last_msg = last_msg
     account.put()
 
-    print "</ol></body></html>"
-    print ""
+    #print "</ol></body></html>"
+    #print ""
 
-sync_twitter(twitter_id=MY_TWITTER_ID)
+for account in Account.all():
+    sync_twitter(account)
+

@@ -1,8 +1,7 @@
-import os
 import logging
-
-from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.ext.webapp import template, RequestHandler, WSGIApplication
+import webapp2
+from google.appengine.ext.webapp import template
+from google.appengine.api.app_identity import get_application_id 
 from google.appengine.api import users
 
 import tweepy
@@ -11,7 +10,7 @@ from models import OAuthToken, Account
 from myid import *
 
 
-class MainPage(RequestHandler):
+class MainPage(webapp2.RequestHandler):
 
     def get(self):
         # Build a new oauth handler and display authorization url to user.
@@ -36,14 +35,14 @@ class MainPage(RequestHandler):
         request_token.put()
 
 # Callback page (/oauth/callback)
-class CallbackPage(RequestHandler):
+class CallbackPage(webapp2.RequestHandler):
 
     def get(self):
         oauth_token = self.request.get("oauth_token", None)
         oauth_verifier = self.request.get("oauth_verifier", None)
         if oauth_token is None:
             # Invalid request!
-            self.response.out.write(template.render('error.html', {
+            self.response.out.write(template.render('templates/error.html', {
                     'message': 'Missing required parameters!'
             }))
             return
@@ -52,7 +51,7 @@ class CallbackPage(RequestHandler):
         request_token = OAuthToken.gql("WHERE token_key=:key", key=oauth_token).get()
         if request_token is None:
             # We do not seem to have this request token, show an error.
-            self.response.out.write(template.render('error.html', {'message': 'Invalid token!'}))
+            self.response.out.write(template.render('templates/error.html', {'message': 'Invalid token!'}))
             return
 
         # Rebuild the auth handler
@@ -65,7 +64,7 @@ class CallbackPage(RequestHandler):
             username = auth.get_username();
         except tweepy.TweepError, e:
             # Failed to get access token
-            self.response.out.write( template.render('error.html', {'message': e}))
+            self.response.out.write( template.render('templates/error.html', {'message': e}))
             return
         
         # Lookup the account
@@ -74,6 +73,7 @@ class CallbackPage(RequestHandler):
             # We do not seem to have this account. create one
             account = Account(key_name = username)
 
+        account.tw_screenname = username
         account.tw_token_key = request_token.token_key
         account.tw_token_secret =  request_token.token_secret
         account.tw_access_key = auth.access_token.key
@@ -83,24 +83,21 @@ class CallbackPage(RequestHandler):
         request_token.delete();
 
         self.response.out.write(
-                template.render('templates/callback.html', {
-                    'username': account.key().name() ,
-                    'key': account.tw_access_key,
-                    'secret': account.tw_access_secret
-                    }))
-        #self.redirect('/home')
+                template.render('templates/callback.html', {'account':account}))
       
-# Construct the WSGI application
-application = WSGIApplication([
+# bindweibo 
+class BindWeiboPage(webapp2.RequestHandler):
 
+    def post(self):
+        username = self.request.get("username")
+        account = Account.get_by_key_name(username)
+        account.wb_access_token = self.request.get("wb_access_token")
+        account.put()
+
+        self.redirect('/binding.html')
+
+app = webapp2.WSGIApplication(routes=[
         (r'/', MainPage),
+        (r'/bindweibo', BindWeiboPage),
         (r'/oauth/callback', CallbackPage),
-
 ], debug=True)
-
-def main():
-    run_wsgi_app(application)
-
-# Run the WSGI application
-if __name__ == '__main__':
-    main()
