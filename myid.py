@@ -2,6 +2,7 @@
 IDs
 """
 import os
+from google.appengine.api.app_identity import get_application_id 
 
 if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
     CONSUMER_KEY = 'owRilZIiE0IMHtm6Zjgfg'
@@ -10,5 +11,5 @@ if os.environ.get('SERVER_SOFTWARE','').startswith('Devel'):
 else:
     CONSUMER_KEY = 'FsDebaMWF0LEi9TDDUofiA'
     CONSUMER_SECRET = '2q3BF3pZj5jr81MP2EZoETRTAp3AA890zEtptXI'
-    CALLBACK = 'http://urfatu-tw-weibo.appspot.com/oauth/callback'
+    CALLBACK = 'http://' + get_application_id() + '.appspot.com/oauth/callback'
 
