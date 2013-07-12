@@ -228,7 +228,10 @@ def send_sina_msg_gtalkbot(account, msg):
 #get one page of to user's replies, 20 messages at most. 
 def sync_twitter(account):
 
-    if account is None:
+    if account is None :
+        return
+    
+    if account.wb_bot_sina is None :
         return
 
     last_id = account.tw_last_msg_id
