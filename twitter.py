@@ -256,10 +256,11 @@ def sync_twitter(account):
     for tweet in reversed(user_timeline):
         twid=tweet.id_str
         text = unescape(tweet.text)
-        text, img_url = replace_tco(text)
 
         if text[0] == '@' : #do not sync iff @, sync RT@
             continue
+
+        text, img_url = replace_tco(text)
 
         logging.debug("msg id=%s,msg:%s "%(twid, text))
         send_sina_msg_gtalkbot(account, text)
