@@ -70,10 +70,11 @@ def untco(url):
         traceback.print_exc(file=sys.stdout)
         return untco_tcoonly(url)
 
-    if not response.final_url.startswith("http://"):
-        return untco_tcoonly(url)
-
-    return response.final_url
+    if response.final_url != None :
+        if not response.final_url.startswith("http://"):
+            return untco_tcoonly(url)
+        return response.final_url
+    return url
 
 def short_cbsso(longurl):
 
