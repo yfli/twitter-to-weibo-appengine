@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 __author__ = 'Liao Xuefeng (askxuefeng@gmail.com)'
 
 '''
@@ -104,7 +104,7 @@ def _guess_content_type(url):
     if n==(-1):
         return 'application/octet-stream'
     ext = url[n:]
-    mimetypes.types_map.get(ext, 'application/octet-stream')
+    return mimetypes.types_map.get(ext, 'application/octet-stream')
 
 _HTTP_GET = 0
 _HTTP_POST = 1
@@ -157,7 +157,7 @@ def _http_call(the_url, method, authorization, **kw):
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s' % boundary)
     try:
-        resp = urllib2.urlopen(req, timeout=199)
+        resp = urllib2.urlopen(req, timeout=999)
         body = _read_body(resp)
         r = _parse_json(body)
         if hasattr(r, 'error_code'):

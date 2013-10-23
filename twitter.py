@@ -73,6 +73,7 @@ def untco_tcoonly(url):
 
 def untco(url):
     try:
+        logging.debug("untco unshort %s", url)
         response = urlfetch.fetch(url,
                 method=urlfetch.HEAD)
     except:
@@ -80,10 +81,11 @@ def untco(url):
         traceback.print_exc(file=sys.stdout)
         return untco_tcoonly(url)
 
-    if not response.final_url.startswith("http://"):
-        return untco_tcoonly(url)
-
-    return response.final_url
+    if response.final_url != None :
+        if not response.final_url.startswith("http://"):
+            return untco_tcoonly(url)
+        return response.final_url
+    return url
 
 def short_cbsso(longurl):
 
@@ -269,7 +271,7 @@ def sync_twitter(account):
         user_timeline = twitter.user_timeline(screen_name=account.tw_screenname, since_id=last_id)
     except TweepError, e:
         if (e.response != None and e.response.status != 400):
-            logging.error("Error to get twitter user_timeline, E: %s",e.reason)
+            logging.error("Error to get twitter %s user_timeline, E: %s",account.tw_screenname, e.reason)
         return;
 
     wbclient = APIClient(app_key="fake", app_secret='fake',
@@ -280,6 +282,7 @@ def sync_twitter(account):
     for tweet in reversed(user_timeline):
         twid=tweet.id_str
         text = unescape(tweet.text)
+        logging.debug("msg id=%s,msg:%s "%(twid, text))
         text, img_url = replace_tco(text)
 
         if text[0] == '@' : #do not sync iff @, sync RT@
@@ -306,7 +309,7 @@ def sync_twitter(account):
             logging.error("Err connect to sina, HTTPError")
         except Exception, e:
             logging.error("Err update to sina, %s", str(e))
-            break
+            #break
 
         last_id = tweet.id_str
         last_msg = text
