@@ -157,7 +157,8 @@ def get_img_file_url(img_site_url):
 
             m = re.search(r"sizeMap: +\[([^<]+)\]", response.content)
             if m:
-                size_map = ['_b', '_c', '_z',  '_m', '_n', '_s', '_q', '_sq', '_t']
+                # use 800 as maximum img, to reduce sina connection timeout
+                size_map = ['_c', '_z',  '_m', '_n', '_s', '_q', '_sq', '_t']
                 for size in size_map:
                     if m.group(1).find(size) != -1:
                         return base_url.replace('.jpg', size+'.jpg')
