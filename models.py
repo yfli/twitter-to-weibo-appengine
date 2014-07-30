@@ -1,6 +1,7 @@
 
 from google.appengine.ext import db
 
+
 class Account(db.Model):
     tw_screenname = db.StringProperty()
     tw_token_key = db.StringProperty()
@@ -11,7 +12,7 @@ class Account(db.Model):
     tw_last_msg = db.StringProperty(multiline=True)
     wb_access_token = db.StringProperty()
 
+
 class OAuthToken(db.Model):
     token_key = db.StringProperty(required=True)
     token_secret = db.StringProperty(required=True)
-
